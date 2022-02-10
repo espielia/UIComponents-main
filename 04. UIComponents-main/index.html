@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600;1,700&display=swap"
+			rel="stylesheet"
+		/>
+		<link type="text/css" rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.0/css/all.css" />
+		<script src="https://cdn.tailwindcss.com"></script>
+		<script>
+			tailwind.config = {
+				theme: {
+					fontFamily: {
+						sans: ["Open Sans", "sans-serif"],
+					},
+					extend: {
+						colors: {
+							transparent: "transparent",
+							current: "currentColor",
+							primary: "#A8DE00",
+							"primary-dark": "#89B500",
+							"primary-light": "#BFFC00",
+							secondary: "#006F69",
+							muted: "#8A9998",
+							"muted-dark": "#6A7575",
+							"muted-light": "#AABDBB",
+							light: "#E9EBEB",
+							danger: "#CC0000",
+						},
+					},
+				},
+			};
+		</script>
+		<style type="text/tailwindcss"></style>
+		<style>
+			/* Chrome, Safari and Opera */
+			.no-scrollbar::-webkit-scrollbar {
+			  display: none;
+			}
+		
+			.no-scrollbar {
+			  -ms-overflow-style: none; /* IE and Edge */
+			  scrollbar-width: none; /* Firefox */
+			}
+		</style>
+	</head>
+	<body class="bg-light">
+		<div id="toolkit-app">
+			<div class="max-w-4xl mx-auto flex flex-col space-y-4 m-4 px-4">
+				<div class="flex bg-white rounded-lg p-[1px] max-width-[100%] overflow-x-auto no-scrollbar">
+					<div class="grow px-3 py-2 text-center rounded-lg transition"
+						:class="{'bg-secondary text-white' : i == currentSection, 'text-secondary cursor-pointer hover:bg-secondary/10' : i != currentSection}"
+						@click="currentSection = i"
+						v-for="(section, i) in sections">{{section.title}}</div>
+				</div>
+				<div class="mb-4 flex flex-col space-y-4"
+					v-if="sections">
+					<div class="bg-white rounded-lg py-3 px-4 flex flex-col space-y-2">
+						<div class="text-2xl font-bold text-secondary uppercase">{{sectionData.title}}</div>
+						<div class="text-muted text-sm" v-if="sectionData.intro" v-html="sectionData.intro"></div>
+					</div>
+					<template
+						v-for="(block, j) in sectionData.blocks">
+						<div class="bg-white rounded-lg py-3 px-4 flex flex-col space-y-2">
+							<div class="flex items-center"
+								:class="{'cursor-pointer hover:text-primary' : block.elements}"
+								@click="toggleBlock(j)">
+								<div class="text-xl font-bold transition" v-if="block.title"
+									:class="{'text-muted' : !block.elements}">{{block.title}}</div>
+								<i class="fas fa-chevron-down ml-auto transition" v-if="block.elements"
+									:class="{'text-secondary fa-flip-vertical': openBlock == currentSection + '-' + j, 'text-primary': openBlock != currentSection + '-' + j}"></i>
+							</div>
+							<div class="space-y-2 overflow-hidden transition-all"
+								:class="{'max-h-fit' : openBlock == currentSection + '-' + j, 'max-h-0 !m-0': openBlock != currentSection + '-' + j}">
+								<div class="text-muted text-sm" v-if="block.intro" v-html="block.intro"></div>
+								<template
+									v-for="element in block.elements">
+									<hr class="border-light" />
+									<div class="font-bold text-muted" v-if="element.title">{{element.title}}</div>
+									<div class="text-muted text-sm" v-if="element.intro" v-html="element.intro"></div>
+									<div class="grid md:grid-cols-2 gap-4">
+										<div>
+											<component
+												:is="element.tag || 'div'" 
+												v-html="element.content"
+												v-bind="element.attrs"
+												:class="[element.classes, element.displayclasses]"></component>
+										</div>
+										<div>
+											<div class="text-xs border bg-light rounded-xl px-3 py-2 relative"
+												@click="copyToClipboard"
+												@mouseout="copied = false">
+												<code>{{element.classes}}</code>
+												<div class="absolute opacity-0 hover:opacity-100 w-full h-full left-0 top-0 transition bg-light/60 backdrop-blur-sm rounded-xl flex cursor-pointer items-center justify-center text-secondary"
+													:class="{'font-bold' : copied}">
+													{{copied ? 'Copied!' : 'Click to copy'}}
+												</div>
+											</div>
+										</div>
+									</div>
+									<p class="text-muted text-sm italic" v-if="element.notes" v-html="element.notes"></p>
+								</template>
+							</div>
+						</div>
+					</template>
+				</div>
+			</div>
+		</div>
+		<script src="data/index.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+		<script src="https://cdn.jsdelivr.net/npm/vue-scrollto"></script>
+		<script>
+			var app = new Vue({
+				el: '#toolkit-app',
+				data: {
+					sections: null,
+					currentSection: 0,
+					copied: false,
+					openBlock: null
+				},
+				computed: {
+					sectionData() {
+						return this.sections[this.currentSection];
+					}
+				},
+				methods: {
+					copyToClipboard(e) {
+						var range = document.createRange();
+						range.selectNode(e.currentTarget.querySelector('code'));
+						window.getSelection().removeAllRanges();
+						window.getSelection().addRange(range);
+						document.execCommand("copy");
+						window.getSelection().removeAllRanges();
+						this.copied = true;
+					},
+					toggleBlock(j) {
+						if (this.openBlock == this.currentSection + '-' + j)
+							this.openBlock = null
+						else
+							this.openBlock = this.currentSection + '-' + j;
+					}
+				},
+				created() {
+					this.sections = data.sections;
+				},
+				directives: {},
+				filters: {}
+			})
+		</script>
+	</body>
+</html>
